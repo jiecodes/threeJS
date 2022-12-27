@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  1 初始化 包管理配置(空文件下 创建package.json)         npm init -y   
+  2 使用打包工具 parcel(和webpack比 运行速度快 创建node_modules)         npm install parcel-bundler --save-dev(开发时依赖)
+  3 安装 three.js                                     npm install three --save(运行时依赖)
+    导入 main.js(入口文件)      import * as three from "three"      import three from "three"
+  4 创建 一些文件夹 dist src views
+  5 main.js 编写
+    github copilot 代码提示
+    
+
+  动画库  GSAP
+    npm install gsap
+    import  gsap from "gsap";
+    gsap.to(cube.rotation, { x: Math.PI * 2 , duration: 5, ease: "power1.out",})
+
+  gui库 控制物体
+    npm install dat.gui --save (运行时依赖)
+    import * as dat from 'dat.gui'
+    初始化 const gui = new dat.GUI()
+
+
+  
+
+</body>
+</html>
