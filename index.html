@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="./css/base.css">
+  <style>
+    canvas {
+      background: url(./imgs/star.jpg); 
+      background-size: cover;
+    }
+    .label {
+      color: red;
+      font-size: 20px;
+    }
+  </style>
+  <!-- 月球绕地球转 -->
+  <script type="module">
+    // 导入three.js文件
+    import * as THREE from './libs/build/three.module.js'
+    // 导入控制器 可以旋转3D物体
+    import { OrbitControls } from './libs/jsm/controls/OrbitControls.js'
+    // 显示文字 导入2d渲染器    
+    import { CSS2DRenderer, CSS2DObject} from './libs/jsm/renderers/CSS2DRenderer.js'
+
+    // 声明变量
+    let camera, scene, renderer, labelRenderer;
+    let moon, earth; 
+    let clock = new THREE.Clock();
+    // 实例化纹理加载器 
+    let textureLoader = new THREE.TextureLoader()
+
+    // 初始化
+    function init() { 
+      // 月球半径
+      const MOON_RADIUS = 0.27
+      const EARTH_RADIUS = 2.5 
+      // 1 透视相机
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+      // 透视相机 位置
+      camera.position.set(10, 5, 20)
+
+      // 2 场景
+      scene = new THREE.Scene();
+
+      // 3 聚光灯
+      const dirLight = new THREE.SpotLight(0xffffff);
+      // 聚光灯位置
+      dirLight.position.set(0, 0, 10);
+      // 聚光灯 强度
+      dirLight.intensity = 2;
+      // 聚光灯 投影
+      dirLight.castShadow = true;
+      scene.add(dirLight)
+      // 添加环境光 显示的光亮些
+      const ambientLight = new THREE.AmbientLight(0xffffff)
+      // 环境光 亮度
+      ambientLight.intensity = 0.3
+      scene.add(ambientLight)
+
+      // 4 月球(物体) (球体)几何体和(网络)材质 添加到 网格物体中        ( 半径 宽高)
+      const moonGeometry = new THREE.SphereGeometry(MOON_RADIUS, 16, 16)
+      const moonMaterial = new THREE.MeshPhongMaterial({
+        // 材质展示映射的图片
+        map: textureLoader.load('texture/planets/moon_1024.jpg')
+      })
+      moon = new THREE.Mesh(moonGeometry, moonMaterial)
+      // 添加阴影
+      moon.receiveShadow = true
+      moon.castShadow = true
+      scene.add(moon)
+      // 地球(物体)  (球体)几何体和(网格)材质 添加的网格物体中
+      const earthGeometry = new THREE.SphereGeometry(EARTH_RADIUS, 16, 16)
+      const earthMaterial = new THREE.MeshPhongMaterial({
+        // 地球 材质展示映射的图片
+        map: textureLoader.load('texture/planets/earth_atmos_2048.jpg'),
+        // 加入图片 法线 有凹凸感
+        specularMap: textureLoader.load('texture/planets/earth_specular_2048.jpg'),
+        normalMap: textureLoader.load('texture/planets/earth_normal_2048.jpg'),
+        shininess: 5,     // 反射度
+      })
+      // 地球物体 几何体和材质
+      earth = new THREE.Mesh(earthGeometry, earthMaterial)
+      // 缩放倍数
+      earth.scale.set(1.5, 1.5, 1.5)
+      // 添加阴影
+      earth.receiveShadow = true
+      earth.castShadow = true
+      scene.add(earth)
+
+      // 地球上面的文字 显示文字
+      const earthDIV = document.createElement('div');
+      earthDIV.className = 'label'
+      earthDIV.textContent = '地球'
+      const earthLabel = new CSS2DObject(earthDIV)
+      earthLabel.position.set(0, EARTH_RADIUS + 0.5, 0)
+      earth.add(earthLabel)
+
+      // 月球上面的文字 显示文字
+      const moonDIV = document.createElement('div');
+      moonDIV.className = 'label'
+      moonDIV.textContent = '月球'
+      const moonLabel = new CSS2DObject(moonDIV)
+      moonLabel.position.set(0, MOON_RADIUS + 0.5, 0)
+      moon.add(moonLabel)
+
+      // 5 渲染器     alpha 可以透过渲染器看背景
+      renderer = new THREE.WebGLRenderer({ alpha: true });
+      // 渲染器 像素密度
+      renderer.setPixelRatio(window.devicePixelRatio);
+      // 渲染器 大小
+      renderer.setSize(window.innerWidth, window.innerHeight)
+      // 渲染器阴影
+      renderer.shadowMap.enabled = true;
+      // 渲染器添加到 dom中
+      document.body.appendChild(renderer.domElement)
+
+      // 文字渲染器
+      labelRenderer = new CSS2DRenderer();
+      labelRenderer.setSize(window.innerWidth, window.innerHeight)
+      labelRenderer.domElement.style.position = 'absolute'
+      labelRenderer.domElement.style.top = '0px'
+      // 添加元素标签到 body中
+      document.body.appendChild(labelRenderer.domElement)
+
+      // 6 可以旋转 相机 渲染器
+      const controls = new OrbitControls(camera, renderer.domElement)
+    }
+    var oldtime = 0;
+    // 旋转 相机 渲染器 函数
+    function animate() {
+      // 经过的时间
+      const elapsed = clock.getElapsedTime()
+      // 月球位置 运动
+      moon.position.set(Math.sin(elapsed) * 7, 0, Math.cos(elapsed) * 7)
+
+      // 地球自转
+      let axis = new THREE.Vector3(0, 1, 0)
+      // 每一秒 自转一次
+      earth.rotateOnAxis(axis, (elapsed - oldtime) * Math.PI / 10)
+      // 在渲染器下 渲染场景和相机
+      renderer.render(scene, camera)
+      oldtime = elapsed
+      // 标签渲染器
+      labelRenderer.render(scene, camera)
+      requestAnimationFrame(animate)
+
+    }
+
+    init()
+    animate()
+
+    // 浏览器发生变化 调整尺寸
+    window.addEventListener('resize', function() {
+      // 相机的样子
+      camera.aspect = window.innerWidth / window.innerHeight
+      // 更新相机 更新投射矩阵
+      camera.updateProjectionMatrix();
+      // 渲染器的尺寸大小
+      renderer.setSize( window.innerWidth, window.innerHeight)
+    })
+    
+    
+
+
+
+
+  </script>
+</head>
+<body>
+</body>
+</html>
